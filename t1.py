@@ -50,5 +50,3 @@ class T1:
                 #t.sleep_ms(100)
         except KeyboardInterrupt:
             print()
-
-
