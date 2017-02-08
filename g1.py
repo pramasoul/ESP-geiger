@@ -18,9 +18,9 @@ class Geiger:
             return
 
         def cbf(pin):
-            was = disable_irq()
+            #was = disable_irq() # unnecessary as we are only modifier
             self.counter += 1
-            enable_irq(was)
+            #enable_irq(was)
             self.bip()
 
         self.cb = self.sense.irq(handler=cbf,
@@ -55,10 +55,12 @@ class Geiger:
 class Foo:
     def __init__(self, g):
         self.g = g
-        self.g.start()
+        #self.g.start()
         self.tim = Timer(-1)
+        self.acc = Accumulator()
 
     def start(self):
+        self.prior_count = self.g.counter
         self.tim.init(period=1000,
                       mode=Timer.PERIODIC,
                       callback=self.print_count)
@@ -67,5 +69,11 @@ class Foo:
         self.tim.deinit()
 
     def print_count(self, t):
-        print('\x1b[s\x1b[1;70H' + str(self.g.counter) + '\x1b[u',
-              end='')
+        c = self.g.counter
+        delta = c - self.prior_count
+        self.prior_count = c
+        self.acc.log_value(delta)
+        print('\x1b[s\x1b[1;74H\x1b[2K', end='')
+        print(delta, c, end='\x1b[u')
+
+

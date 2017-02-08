@@ -3,8 +3,39 @@
 
 from array import array
 
+
+
+# Monitor the Geiger counter count every second
+# Be able to provide:
+# - count each second for the last 300 seconds
+# - count each minute for the last 300 minutes
+# - count each hour for the last 300 hours
+# - count each day for the last 300 days (maybe)
+#
+# Assume max counting rate is < 2**16/sec
+# Second-counts can be stored in uint16
+# The rest should be uint32
+
+
+# Alternative approaches:
+# Log-based:
+# - store every value in uint16
+# - second counts are actual counts
+# - all others are log-encoded
+# enc = lambda x: int(log(x+1)*scale+0.5)
+# dec = lambda x: int(exp(x/scale)-0.5)
+# scale = 2918 to fit:
+# enc((1<<16)*60*60*24) gives 65530
+
+# Lin-log:
+# - actual counts below knee
+# - offset log above knee
+# - knee is enc(scale)
+
+
 class A:
     # model the canonical behavior, however inefficiently
+    # This allows us to test the unit test code
     def __init__(self):
         self.s = [0]
         self.m = [0]
@@ -45,13 +76,13 @@ class A:
 
 
 
-
-
 class Accumulator:
     def __init__(self):
         self.seconds_value = array('H', (0 for i in range(300)))
         self.minutes_value = array('L', (0 for i in range(300)))
-        self.i_seconds = self.i_minutes = 300-1
+        self.hours_value = array('L', (0 for i in range(300)))
+        self.days_value = array('L', (0 for i in range(300)))
+        self.i_seconds = self.i_minutes = self.i_hours = self.i_days = 0
 
     def log_value(self, v):
         i_s = self.i_seconds = (self.i_seconds + 1) % 300
@@ -64,6 +95,10 @@ class Accumulator:
         i = (self.i_seconds - 60) % 300
         self.minutes_value[i_m] = sum(self.seconds_value[i:i+60])
             
+    def _last_n(self, n, what):
+        for i in range(min(n, len(what))):
+            yield what[i]
+
     def last_n_seconds(self, n):
         i_s = self.i_seconds
         s_v = self.seconds_value
