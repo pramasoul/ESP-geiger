@@ -1,9 +1,10 @@
 # g1 - geiger counter -TAS
 
 import micropython
-from machine import Pin, Timer, disable_irq, enable_irq, idle
-
 micropython.alloc_emergency_exception_buf(100)
+from machine import Pin, Timer, disable_irq, enable_irq, idle
+from gu import Accumulator
+
 
 class Geiger:
     def __init__(self):

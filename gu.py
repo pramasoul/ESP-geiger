@@ -33,85 +33,57 @@ from array import array
 # - knee is enc(scale)
 
 
-class A:
-    # model the canonical behavior, however inefficiently
-    # This allows us to test the unit test code
-    def __init__(self):
-        self.s = [0]
-        self.m = [0]
-        self.h = [0]
-        self.d = [0]
-        self.n_s = 0
+class Strip:
+    def __init__(self, code, length, period):
+        self.data = array(code, (0 for i in range(length)))
+        self.period = period
+        self.ix = 0
+        self.count = 0
+    
+    def note(self, v):
+        ix = self.ix = (self.ix + 1) % len(self.data)
+        self.data[ix] = v
+        self.count += 1
+        return self.count % self.period == 0
 
-    def log_value(self, v):
-        self.s.insert(0,v)
-        self.s = self.s[:300]
-        self.n_s += 1
-        if self.n_s % 60 == 0:
-            self.m.insert(0,sum(self.s[:60]))
-            self.m = self.m[:300]
-        if self.n_s % (60*60) == 0:
-            self.h.insert(0,sum(self.m[:60]))
-            self.h = self.h[:300]
-        if self.n_s % (60*60*24) == 0:
-            self.d.insert(0,sum(self.h[:24]))
-            self.d = self.d[:300]
-
-
-    def _last_n(self, n, what):
-        for i in range(min(n, len(what))):
-            yield what[i]
-
-    def last_n_seconds(self, n):
-        return self._last_n(n, self.s)
-
-    def last_n_minutes(self, n):
-        return self._last_n(n, self.m)
-
-    def last_n_hours(self, n):
-        return self._last_n(n, self.h)
-
-    def last_n_days(self, n):
-        return self._last_n(n, self.d)
-
+    def last_n(self, n):
+        ix = self.ix
+        data = self.data
+        capacity = len(data)
+        for i in range(min(n, capacity, self.count)):
+            yield data[(ix + capacity - i)%capacity]
+        
+    def period_sum(self):
+        return sum(self.last_n(self.period))
 
 
 class Accumulator:
     def __init__(self):
-        self.seconds_value = array('H', (0 for i in range(300)))
-        self.minutes_value = array('L', (0 for i in range(300)))
-        self.hours_value = array('L', (0 for i in range(300)))
-        self.days_value = array('L', (0 for i in range(300)))
-        self.i_seconds = self.i_minutes = self.i_hours = self.i_days = 0
+        self.s = Strip('H', 300, 60)
+        self.m = Strip('L', 300, 60)
+        self.h = Strip('L', 300, 24)
+        self.d = Strip('L', 300, 365)
 
     def log_value(self, v):
-        i_s = self.i_seconds = (self.i_seconds + 1) % 300
-        if i_s % 60 == 0:
-            self.new_minute()
-        self.seconds_value[i_s] = v
-
-    def new_minute(self):
-        i_m = self.i_minutes = (self.i_minutes + 1) % 300        
-        i = (self.i_seconds - 60) % 300
-        self.minutes_value[i_m] = sum(self.seconds_value[i:i+60])
-            
-    def _last_n(self, n, what):
-        for i in range(min(n, len(what))):
-            yield what[i]
-
+        if self.s.note(v):
+            if self.m.note(self.s.period_sum()):
+                if self.h.note(self.m.period_sum()):
+                    if self.d.note(self.h.period_sum()):
+                        # a year's worth, FIXME
+                        pass
+                    
     def last_n_seconds(self, n):
-        i_s = self.i_seconds
-        s_v = self.seconds_value
-        for i in range(n):            
-            yield s_v[(i_s+300-i)%300]
-            
-    def last_n_minutes(self, n):
-        i_s = self.i_minutes
-        m_v = self.minutes_value
-        for i in range(n):            
-            yield m_v[(i_s+300-i)%300]
-            
+        yield from self.s.last_n(n)
 
+    def last_n_minutes(self, n):
+        yield from self.m.last_n(n)
+    
+    def last_n_hours(self, n):
+        yield from self.h.last_n(n)
+    
+    def last_n_days(self, n):
+        yield from self.d.last_n(n)
+    
 
     # Monitor the Geiger counter count every second
     # Be able to provide:
