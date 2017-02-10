@@ -22,7 +22,7 @@ class TestCanonicalAccumulator(unittest.TestCase):
         for i in range(10):
             a.log_value(i+1)
         self.assertEqual(list(a.last_n_seconds(10)), list(range(10,0,-1)))
-        self.assertEqual(list(a.last_n_seconds(100)), list(range(10,-1,-1)))
+        self.assertEqual(list(a.last_n_seconds(100)), list(range(10,-0,-1)))
 
     def testYields2(self):
         a = CanonicalAccumulator()
@@ -36,14 +36,14 @@ class TestCanonicalAccumulator(unittest.TestCase):
         a = CanonicalAccumulator()
         for i in range(59):
             a.log_value(i+1)
-        self.assertEqual(list(a.last_n_minutes(10)), [0])
+        self.assertEqual(list(a.last_n_minutes(10)), [])
         a.log_value(60)
         t = sum(range(60,0,-1))
         self.assertEqual(t, 60*61/2)
-        self.assertEqual(list(a.last_n_minutes(10)), [t, 0])
+        self.assertEqual(list(a.last_n_minutes(10)), [t])
         for i in range(60):
             a.log_value(i+61)
-        self.assertEqual(list(a.last_n_minutes(10)), [t+3600, t, 0])
+        self.assertEqual(list(a.last_n_minutes(10)), [t+3600, t])
         
 
     def testYieldDaysWorth(self):
@@ -64,13 +64,13 @@ class TestCanonicalAccumulator(unittest.TestCase):
         m = n//b
         t = b*(b-1)//2
         self.assertEqual(list(a.last_n_hours(12345)),
-                         list(range(b*b*m-t, b*b*(m-48)-t, -b*b)) + [0])
+                         list(range(b*b*m-t, b*b*(m-48)-t, -b*b)))
         # check days
         b *= 24
         m = n//b
         t = b*(b-1)//2
         self.assertEqual(list(a.last_n_days(12345)),
-                         list(range(b*b*m-t, b*b*(m-2)-t, -b*b)) + [0])
+                         list(range(b*b*m-t, b*b*(m-2)-t, -b*b)))
 
 
 def radioactive(n):
@@ -104,7 +104,7 @@ class TestAccumulator(unittest.TestCase):
         self.assertEqual(list(a.last_n_seconds(300)), list(range(400,100,-1)))
 
 
-    def xtestYieldm(self):
+    def testYieldm(self):
         a = Accumulator()
         for i in range(59):
             a.log_value(i+1)
@@ -118,7 +118,7 @@ class TestAccumulator(unittest.TestCase):
         self.assertEqual(list(a.last_n_minutes(10)), [t+3600, t, 0])
         
 
-    def xtestYieldDaysWorth(self):
+    def testYieldDaysWorth(self):
         a = Accumulator()
         n = 60*60*24*2
         for i in range(n):

@@ -34,10 +34,10 @@ class CanonicalAccumulator:
     # model the canonical behavior, however inefficiently
     # This allows us to test the unit test code
     def __init__(self):
-        self.s = [0]
-        self.m = [0]
-        self.h = [0]
-        self.d = [0]
+        self.s = []
+        self.m = []
+        self.h = []
+        self.d = []
         self.n_s = 0
 
     def log_value(self, v):
