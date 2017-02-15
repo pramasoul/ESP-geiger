@@ -6,15 +6,14 @@ def wsgi_to_bytes(s):
     return s.encode('iso-8859-1')
 
 def make_server(host, port, app):
-    
+    pass #FIXME
 
-def run_wsgi(application):
-    environ = {}
+def run_wsgi(application, environ, out):
     headers_set = []
     headers_sent = []
 
     def write(data):
-        out = sys.stdout.buffer
+        #out = sys.stdout.buffer
 
         if not headers_set:
              raise AssertionError("write() before start_response()")
@@ -22,7 +21,7 @@ def run_wsgi(application):
         elif not headers_sent:
              # Before the first output, send the stored headers
              status, response_headers = headers_sent[:] = headers_set
-             out.write(wsgi_to_bytes('Status: %s\r\n' % status))
+             out.write(wsgi_to_bytes('HTTP/1.0: %s\r\n' % status))
              for header in response_headers:
                  out.write(wsgi_to_bytes('%s: %s\r\n' % header))
              out.write(wsgi_to_bytes('\r\n'))
@@ -56,7 +55,7 @@ def run_wsgi(application):
             if data:    # don't send headers until body appears
                 write(data)
         if not headers_sent:
-            write('')   # send headers now if body was empty
+            write(b'')   # send headers now if body was empty
     finally:
         if hasattr(result, 'close'):
             result.close()
