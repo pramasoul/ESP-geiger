@@ -53,13 +53,13 @@ class Geiger:
             print()
 
 
-class Foo:
+class GLog:
     def __init__(self, g):
         self.g = g
         #self.g.start()
         self.tim = Timer(-1)
         self.acc = Accumulator()
-        self.sysdpy = True
+        self.display = False
 
     def start(self):
         self.prior_count = self.g.counter
@@ -75,8 +75,27 @@ class Foo:
         delta = c - self.prior_count
         self.prior_count = c
         self.acc.log_value(delta)
-        if self.sysdpy:
+        if self.display:
             print('\x1b[s\x1b[1;74H\x1b[2K', end='')
             print(delta, c, end='\x1b[u')
 
+
+class Gwsgi:
+    def __init__(self, log):
+        self.log = log
+        self.count = 0
+        self.welcome = b"Hello world!\n"
+
+    def wsgi_app(self, environ, start_response):
+        self.count += 1
+        if environ['PATH_INFO'] == '/favicon.ico':
+            status = '404 not found'
+            response_headers = [('Content-type', 'text/plain')]
+            rv = []
+        else:
+            status = '200 OK'
+            response_headers = [('Content-type', 'text/plain')]
+            rv = [self.welcome, b'%d\n'%self.count]
+        start_response(status, response_headers)
+        return rv
 

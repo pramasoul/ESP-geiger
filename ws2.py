@@ -68,34 +68,3 @@ Connection: close\r
 
     def stop(self):
         self.s.close()
-
-# OBSOLETE
-class GET_handler:
-    def __init__(self):
-        self.prefix = b"""<!DOCTYPE html>
-<html>
- <head>
-  <title>Trivial Web Server</title>
-  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
- </head>
- <body>
-  <h1>Test</h1>
-"""
-        self.suffix = b"""</body></html>"""
-        self.count = 0
-
-    def get(self, path):
-        self.count += 1
-        if path == b'/count':
-            return self.prefix + str(self.count).encode('UTF8') + self.suffix
-        return self.prefix + \
-            b'<pre>%s</pre>' % path + self.suffix
-
-# test
-#from wsgiref.simple_server import demo_app
-from test_wsgi import s2_app
-ws = WS(s2_app)
-ws.start()
-ws.verbose = False
-while True:
-    ws.handle_one(10)
