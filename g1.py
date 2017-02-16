@@ -59,22 +59,24 @@ class Foo:
         #self.g.start()
         self.tim = Timer(-1)
         self.acc = Accumulator()
+        self.sysdpy = True
 
     def start(self):
         self.prior_count = self.g.counter
         self.tim.init(period=1000,
                       mode=Timer.PERIODIC,
-                      callback=self.print_count)
+                      callback=self.log)
 
     def stop(self):
         self.tim.deinit()
 
-    def print_count(self, t):
+    def log(self, t):
         c = self.g.counter
         delta = c - self.prior_count
         self.prior_count = c
         self.acc.log_value(delta)
-        print('\x1b[s\x1b[1;74H\x1b[2K', end='')
-        print(delta, c, end='\x1b[u')
+        if self.sysdpy:
+            print('\x1b[s\x1b[1;74H\x1b[2K', end='')
+            print(delta, c, end='\x1b[u')
 
 

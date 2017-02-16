@@ -1,5 +1,4 @@
 # web server - TAS
-import pdb
 import socket
 from sys import stderr
 
@@ -40,8 +39,7 @@ Connection: close\r
         except OSError:
             return 0
         print('client connected from', ca)
-        #pdb.set_trace()
-        cl_file = cl.makefile('rwb', 0)
+        cl_file = cl.makefile('rwb', None)
         line = b2s(cl_file.readline()).rstrip('\r\n')
         print(line)
 

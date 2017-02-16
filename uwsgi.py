@@ -27,7 +27,7 @@ def run_wsgi(application, environ, out):
              out.write(wsgi_to_bytes('\r\n'))
 
         out.write(data)
-        out.flush()
+        #out.flush()
 
     def start_response(status, response_headers, exc_info=None):
         if exc_info:
