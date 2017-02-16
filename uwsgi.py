@@ -27,7 +27,10 @@ def run_wsgi(application, environ, out):
              out.write(wsgi_to_bytes('\r\n'))
 
         out.write(data)
-        #out.flush()
+        try:
+            out.flush()
+        except AttributeError:
+            pass
 
     def start_response(status, response_headers, exc_info=None):
         if exc_info:
