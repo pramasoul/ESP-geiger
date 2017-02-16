@@ -18,6 +18,7 @@ Connection: close\r
 """
         self.app = app
         self.err = stderr
+        self.verbose = True
         
 
     def start(self):
@@ -27,7 +28,7 @@ Connection: close\r
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(addr)
             s.listen(2)
-            print('listening on', addr)
+            self.verbose and print('listening on', addr)
         except:
             s.close()
 
@@ -38,10 +39,10 @@ Connection: close\r
             cl, ca = s.accept()
         except OSError:
             return 0
-        print('client connected from', ca)
+        self.verbose and print('client connected from', ca)
         cl_file = cl.makefile('rwb', None)
         line = b2s(cl_file.readline()).rstrip('\r\n')
-        print(line)
+        self.verbose and print(line)
 
         env = { 'wsgi.errors': self.err }
         cmd, path, ver = line.split()
@@ -57,7 +58,7 @@ Connection: close\r
             # With more resources we would collect these headers into env
             # Here we just discard them
             line = cl_file.readline()#.rstrip(b'\r\n')
-            print(line)
+            self.verbose and print(line)
             if not line or line == b'\r\n':
                 break
 
@@ -95,5 +96,6 @@ class GET_handler:
 from test_wsgi import s2_app
 ws = WS(s2_app)
 ws.start()
+ws.verbose = False
 while True:
     ws.handle_one(10)
