@@ -9,6 +9,7 @@ from gu import Accumulator
 class Geiger:
     def __init__(self):
         self.led = Pin(0, mode=Pin.OUT)
+        self.led(1)
         self.sense = Pin(4, mode=Pin.IN)
         self.cb = None
         self.counter = 0
@@ -87,6 +88,11 @@ class Gwsgi:
         self.welcome = b"Hello world!\n"
 
     def wsgi_app(self, environ, start_response):
+        def yb():
+            yield self.welcome
+            yield b'Count: %d\n' % self.count
+            yield from self.y_vals()
+
         self.count += 1
         if environ['PATH_INFO'] == '/favicon.ico':
             status = '404 not found'
@@ -96,6 +102,11 @@ class Gwsgi:
             status = '200 OK'
             response_headers = [('Content-type', 'text/plain')]
             rv = [self.welcome, b'%d\n'%self.count]
+            rv = yb()
         start_response(status, response_headers)
         return rv
 
+    def y_vals(self):
+        yield "y_vals\n"
+        for v in self.log.acc.s.last_n(60):
+            yield b' %d' % v
