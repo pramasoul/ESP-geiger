@@ -3,8 +3,6 @@
 
 from array import array
 
-
-
 # Monitor the Geiger counter count every second
 # Be able to provide:
 # - count each second for the last 300 seconds
@@ -84,32 +82,3 @@ class Accumulator:
     def last_n_days(self, n):
         yield from self.d.last_n(n)
     
-
-    # Monitor the Geiger counter count every second
-    # Be able to provide:
-    # - count each second for the last 300 seconds
-    # - count each minute for the last 300 minutes
-    # - count each hour for the last 300 hours
-    # - count each day for the last 300 days (maybe)
-    #
-    # Assume max counting rate is < 2**16/sec
-    # Second-counts can be stored in uint16
-    # The rest should be uint32
-
-
-
-
-# Log-based:
-# - store every value in uint16
-# - second counts are actual counts
-# - all others are log-encoded
-# enc = lambda x: int(log(x+1)*scale+0.5)
-# dec = lambda x: int(exp(x/scale)-0.5)
-# scale = 2918 to fit:
-# enc((1<<16)*60*60*24) gives 65530
-
-# Lin-log:
-# - actual counts below knee
-# - offset log above knee
-# - knee is enc(scale)
-
