@@ -1,19 +1,32 @@
-# test
+# A quickie trial integration of geiger counter parts
+import machine
+import network
+import ntptime
 from g1 import Geiger, GLog, Gwsgi
 from ws2 import WS
-#from test_wsgi import s2_app
 
-g = Geiger()
-gl = GLog(g)
-gw = Gwsgi(gl)
+class Thing:
+    pass
+
+ntptime.settime()
+g = Thing()
+g.uid = machine.unique_id()
+g.wlan = network.WLAN()
+
+geiger = Geiger()
+glog = GLog(geiger)
+gw = Gwsgi(glog)
 ws = WS(gw.wsgi_app)
 print("ready to start")
+geiger.start()
+glog.start()
 ws.start()
 ws.verbose = False
 try:
     while True:
         ws.handle_one(10)
-except:
+except Exception as e:
+    print(e)
     ws.stop()
 
 """
