@@ -88,12 +88,12 @@ class Gwsgi:
     def __init__(self, log):
         self.log = log
         self.count = 0
-        self.welcome = b"Hello world!\n"
+        self.welcome = b"Geiger counter quick demo\n"
 
     def wsgi_app(self, environ, start_response):
         def yb():
             yield self.welcome
-            yield b'Count: %d\n' % self.count
+            yield b'Queried %d times\n' % self.count
             yield from self.y_vals()
 
         self.count += 1
@@ -110,8 +110,15 @@ class Gwsgi:
         return rv
 
     def y_vals(self):
-        yield "y_vals\n"
+        yield "seconds: "
         for v in self.log.acc.s.last_n(60):
             yield b' %d' % v
-
-
+        yield "\nminutes: "
+        for v in self.log.acc.m.last_n(60):
+            yield b' %d' % v
+        yield "\nhours: "
+        for v in self.log.acc.h.last_n(60):
+            yield b' %d' % v
+        yield "\ndays: "
+        for v in self.log.acc.d.last_n(60):
+            yield b' %d' % v
