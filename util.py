@@ -1,9 +1,17 @@
 # random utilities - TAS
+import os
+
 
 def cat(path):
     with open(path) as f:
         for line in f:
             print(line, end='')
+
+
+def df(path='/'):
+    _ = os.statvfs('/')
+    return _[1] * _[4]
+
 
 def pinServe():
     import machine
