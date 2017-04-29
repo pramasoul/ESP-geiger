@@ -1,8 +1,9 @@
-# g1 - geiger counter support utilities - TAS
+# gu - geiger counter support utilities - TAS
 # In generic python3 so testable on other platforms
 
 from array import array
 
+# Objective:
 # Monitor the Geiger counter count every second
 # Be able to provide:
 # - count each second for the last 300 seconds
@@ -15,8 +16,8 @@ from array import array
 # The rest should be uint32
 
 
-# Alternative approaches:
-# Log-based:
+# Alternative approaches, not implemented:
+# Logarithm-based:
 # - store every value in uint16
 # - second counts are actual counts
 # - all others are log-encoded
@@ -24,15 +25,22 @@ from array import array
 # dec = lambda x: int(exp(x/scale)-0.5)
 # scale = 2918 to fit:
 # enc((1<<16)*60*60*24) gives 65530
-
+#
 # Lin-log:
 # - actual counts below knee
 # - offset log above knee
 # - knee is enc(scale)
 
 
+# A Strip is a window of stored history. It has a limited length
+# of stored history. It has a period, which is the number of its
+# stored values which get summed to make up the next single value
+# in the next-coarser-grained Strip in an Accumulator (FIXME: refactor).
+# It has a code, the storage type of the elements in the array
+# that contains the history.
 class Strip:
     def __init__(self, code, length, period):
+        self.code = code
         self.data = array(code, (0 for i in range(length)))
         self.period = period
         self.ix = 0
@@ -55,6 +63,9 @@ class Strip:
         return sum(self.last_n(self.period))
 
 
+# An Accumulator is given an integer value every second, and can
+# provide the "last N" values for seconds, and binned values
+# for last N minutes, hours, and days, up to one year.
 class Accumulator:
     def __init__(self):
         self.s = Strip('H', 300, 60)
@@ -82,3 +93,60 @@ class Accumulator:
     def last_n_days(self, n):
         yield from self.d.last_n(n)
     
+
+# A Reporter reports some contents of an Accumulator log
+# via packed binary UDP to a host
+class Reporter:
+    def __init__(self, g, host, log):
+        self.g = g
+        self.host = host
+        self.log = log
+        self.addr = socket.getaddrinfo(host, 27183)[0][-1]
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.buf = bytearray(512)
+        bv = self.bv = memoryview(buf)
+        bv[0] = 1               # version
+        bv[1:5] = g.unique_id
+        self.bi = 5
+
+    def bssids(self):
+        return sorted(((v[3], v[1]) \
+                       for v in self.g.wlan.scan()), reverse=True)
+
+    def send(self):
+        def append(strip, n):
+            # Append up to n values from the specified Strip, with header
+            bi_for_header = bi
+            bi += calcsize('!Hs')
+            fmt = '!' + strip.code
+            di = calcsize(fmt)
+            qty = 0
+            for v in strip.last_n(n):
+                pack_into(fmt, buf, bi, v)
+                bi += di
+                qty += 1
+            pack_into('!Hs', buf, bi_for_header, qty, strip.code)
+
+        buf = self.buf
+        bi = self.bi
+        bv = self.bv
+        acc = self.log.acc
+
+        pack_into('!II', buf, bi, time.time(), acc.s.count)
+        bi += calcsize('!II')
+        append(acc.s, 60)
+        append(acc.m, 10)
+        append(acc.h, 24)
+
+        # Followed by the bssid's with signal strength
+        l_uchar = calcsize('!B')
+        bslist = self.bssids()
+        pack_into('!B', buf, bi, len(bslist))
+        bi += l_uchar
+        for dbm, bssid in bslist:
+            pack_into('!B', buf, bi, 200+dbm)
+            bi += l_uhcar
+            bv[bi:bi+6] = bssid
+
+        r = self.s.sendto(bv[:bi], self.addr)
+        self.bi = 5
