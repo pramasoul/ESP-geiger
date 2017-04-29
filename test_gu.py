@@ -3,10 +3,11 @@
 # They should all pass in cPython on a computer
 
 import unittest
+from unittest import mock
 from random import randrange
 
-from gu import Accumulator, Strip
-from guts import CanonicalAccumulator
+from gu import Accumulator, Strip, Reporter
+from guts import CanonicalAccumulator, const
 
 class TestStrip(unittest.TestCase):
     def testInit(self):
@@ -17,6 +18,7 @@ class TestStrip(unittest.TestCase):
         s = Strip('H', 13, 45)
         for i in range(123):
             s.note(i+1)
+        self.assertEqual(s.count, 123)
 
     def testYields(self):
         s = Strip('H', 13, 45)
@@ -168,6 +170,22 @@ class TestAccumulator(unittest.TestCase):
             feed(randrange(i))
             compare()
 
+
+class TestReporter:#(unittest.TestCase):
+
+    def make_g(self):
+        class Thing:
+            pass
+        g = Thing()
+        g.uid = b'joey'
+        return g
+
+    def setUp(self):
+        self.g = self.make_g()
+        self.r = Reporter(self.g, 'localhost')
+
+    def testInit(self):
+        self.assertIsInstance(self.r, Reporter)
 
 if __name__ == '__main__':
     unittest.main()
