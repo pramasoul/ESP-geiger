@@ -3,6 +3,10 @@
 import micropython
 micropython.alloc_emergency_exception_buf(100)
 from machine import Pin, Timer, disable_irq, enable_irq, idle
+from machine import unique_id
+
+import socket
+from ubinascii import b2a_base64
 from gu import Accumulator
 
 
@@ -55,15 +59,14 @@ class Geiger:
 
 
 class GLog:
-    def __init__(self, g):
-        self.g = g
-        #self.g.start()
+    def __init__(self, geiger):
+        self.geiger = geiger
         self.tim = Timer(-1)
         self.acc = Accumulator()
         self.display = False
 
     def start(self):
-        self.prior_count = self.g.counter
+        self.prior_count = self.geiger.counter
         self.tim.init(period=1000,
                       mode=Timer.PERIODIC,
                       callback=self.log)
@@ -72,7 +75,7 @@ class GLog:
         self.tim.deinit()
 
     def log(self, t):
-        c = self.g.counter
+        c = self.geiger.counter
         delta = c - self.prior_count
         self.prior_count = c
         self.acc.log_value(delta)
@@ -110,3 +113,5 @@ class Gwsgi:
         yield "y_vals\n"
         for v in self.log.acc.s.last_n(60):
             yield b' %d' % v
+
+
