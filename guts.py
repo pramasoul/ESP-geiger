@@ -1,7 +1,7 @@
 # guts - geiger counter support utilities test support - TAS
 # In generic python3 so testable on other platforms
 
-
+# Test components intended to support this:
 # Monitor the Geiger counter count every second
 # Be able to provide:
 # - count each second for the last 300 seconds
@@ -12,22 +12,6 @@
 # Assume max counting rate is < 2**16/sec
 # Second-counts can be stored in uint16
 # The rest should be uint32
-
-
-# Alternative approaches:
-# Log-based:
-# - store every value in uint16
-# - second counts are actual counts
-# - all others are log-encoded
-# enc = lambda x: int(log(x+1)*scale+0.5)
-# dec = lambda x: int(exp(x/scale)-0.5)
-# scale = 2918 to fit:
-# enc((1<<16)*60*60*24) gives 65530
-
-# Lin-log:
-# - actual counts below knee
-# - offset log above knee
-# - knee is enc(scale)
 
 
 class CanonicalAccumulator:
@@ -71,3 +55,6 @@ class CanonicalAccumulator:
     def last_n_days(self, n):
         return self._last_n(n, self.d)
 
+# micropython has the const() pseudo-function, which is in effect a compiler pragma
+def const(v):
+    return v
