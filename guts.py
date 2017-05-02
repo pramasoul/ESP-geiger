@@ -14,6 +14,11 @@
 # The rest should be uint32
 
 
+import socket
+import time
+import zlib
+
+
 class CanonicalAccumulator:
     # model the canonical behavior, however inefficiently
     # This allows us to test the unit test code
@@ -58,3 +63,36 @@ class CanonicalAccumulator:
 # micropython has the const() pseudo-function, which is in effect a compiler pragma
 def const(v):
     return v
+
+
+# Decode a Reporter packet
+def decodeReport(pkt):
+    rv = dict()
+    rv['version'], rv['uid']  = unpack_from(pkt, '!B4s', 0)
+    return rv
+
+
+class UDPListener(object):
+    def __init__(self, host='0.0.0.0', port=27183, **kwargs):
+        if 'sock' in kwargs:
+            self.sock = kwargs['sock']
+        else:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.bind((host, port))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next_triple()
+
+    def next_triple(self):
+        data, addr = self.sock.recvfrom(65536)
+        ts = time.time()
+        if data.startswith(b'x'):
+            try:
+                data = zlib.decompress(data)
+            except zlib.error:
+                pass
+        return ts, addr, data
