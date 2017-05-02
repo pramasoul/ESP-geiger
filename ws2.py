@@ -9,6 +9,7 @@ def b2s(b):
 
 class WS:
     def __init__(self, app):
+        # Not used yet:
         self.header = b"""HTTP/1.0 200 OK\r
 Content-Type: text/html; charset=UTF-8\r
 Content-Encoding: UTF-8\r
@@ -18,8 +19,8 @@ Connection: close\r
 """
         self.app = app
         self.err = stderr
-        self.verbose = True
-        
+        self.verbose = False
+
 
     def start(self):
         addr = self.addr = socket.getaddrinfo('0.0.0.0', 8080)[0][-1]
