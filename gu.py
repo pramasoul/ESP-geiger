@@ -2,6 +2,9 @@
 # In generic python3 so testable on other platforms
 
 from array import array
+import socket
+import time
+from ustruct import calcsize, pack_into
 
 # Objective:
 # Monitor the Geiger counter count every second
@@ -104,9 +107,9 @@ class Reporter:
         self.addr = socket.getaddrinfo(host, 27183)[0][-1]
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.buf = bytearray(512)
-        bv = self.bv = memoryview(buf)
+        bv = self.bv = memoryview(self.buf)
         bv[0] = 1               # version
-        bv[1:5] = g.unique_id
+        bv[1:5] = g.uid
         self.bi = 5
 
     def bssids(self):
@@ -139,14 +142,15 @@ class Reporter:
         append(acc.h, 24)
 
         # Followed by the bssid's with signal strength
-        l_uchar = calcsize('!B')
-        bslist = self.bssids()
-        pack_into('!B', buf, bi, len(bslist))
-        bi += l_uchar
-        for dbm, bssid in bslist:
-            pack_into('!B', buf, bi, 200+dbm)
-            bi += l_uhcar
-            bv[bi:bi+6] = bssid
+        if False:
+            l_uchar = calcsize('!B')
+            bslist = self.bssids()
+            pack_into('!B', buf, bi, len(bslist))
+            bi += l_uchar
+            for dbm, bssid in bslist:
+                pack_into('!B', buf, bi, 200+dbm)
+                bi += l_uhcar
+                bv[bi:bi+6] = bssid
 
         r = self.s.sendto(bv[:bi], self.addr)
         self.bi = 5

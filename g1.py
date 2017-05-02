@@ -7,7 +7,7 @@ from machine import unique_id
 
 import socket
 from ubinascii import b2a_base64
-from gu import Accumulator
+from gu import Accumulator, Reporter
 
 
 class Geiger:
@@ -84,6 +84,24 @@ class GLog:
             print(delta, c, end='\x1b[u')
 
 
+class GReportPeriodically:
+    def __init__(self, g, log):
+        self.tim = Timer(-1)
+        self.reporter = Reporter(g, '192.168.32.144', log)
+        self.display = False
+
+    def start(self):
+        self.tim.init(period=2000,
+                      mode=Timer.PERIODIC,
+                      callback=self.report)
+
+    def stop(self):
+        self.tim.deinit()
+
+    def report(self, t):
+        self.reporter.send()
+
+
 class Gwsgi:
     def __init__(self, log):
         self.log = log
@@ -97,6 +115,8 @@ class Gwsgi:
             yield from self.y_vals()
 
         self.count += 1
+
+
         if environ['PATH_INFO'] == '/favicon.ico':
             status = '404 not found'
             response_headers = [('Content-type', 'text/plain')]

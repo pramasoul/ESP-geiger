@@ -2,7 +2,7 @@
 import machine
 import network
 import ntptime
-from g1 import Geiger, GLog, Gwsgi
+from g1 import Geiger, GLog, Gwsgi, GReportPeriodically
 from ws2 import WS
 
 class Thing:
@@ -15,13 +15,15 @@ g.wlan = network.WLAN()
 
 geiger = Geiger()
 glog = GLog(geiger)
+grep = GReportPeriodically(g, glog)
 gw = Gwsgi(glog)
 ws = WS(gw.wsgi_app)
 print("ready to start")
 geiger.start()
 glog.start()
+grep.start()
 ws.start()
-ws.verbose = False
+#ws.verbose = True
 try:
     while True:
         ws.handle_one(10)
