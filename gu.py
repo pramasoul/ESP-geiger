@@ -44,6 +44,7 @@ from ustruct import calcsize, pack_into
 class Strip:
     def __init__(self, code, length, period):
         self.code = code
+        self.network_order_code = '!' + code # for noalloc pack_into(fmt)
         self.data = array(code, (0 for i in range(length)))
         self.period = period
         self.ix = 0
@@ -121,7 +122,9 @@ class Reporter:
             # Append up to n values from the specified Strip, with header
             bi_for_header = bi
             bi += calcsize('!Hs')
-            fmt = '!' + strip.code
+            # FIXME: make this noalloc
+            #fmt = '!' + strip.code
+            fmt = strip.network_order_code
             di = calcsize(fmt)
             qty = 0
             for v in strip.last_n(n):
