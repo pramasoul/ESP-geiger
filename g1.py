@@ -85,9 +85,9 @@ class GLog:
 
 
 class GReportPeriodically:
-    def __init__(self, g, log):
+    def __init__(self, g, log, host='192.168.32.69'):
         self.tim = Timer(-1)
-        self.reporter = Reporter(g, '192.168.32.144', log)
+        self.reporter = Reporter(g, host, log)
         self.display = False
 
     def start(self):

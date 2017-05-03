@@ -64,11 +64,23 @@ class CanonicalAccumulator:
 def const(v):
     return v
 
+from struct import calcsize, unpack_from
 
 # Decode a Reporter packet
 def decodeReport(pkt):
     rv = dict()
-    rv['version'], rv['uid']  = unpack_from(pkt, '!B4s', 0)
+    bi = 0
+    rv['version'], rv['uid'] = unpack_from('!B4s', pkt, bi)
+    bi += calcsize('!B4s')
+    rv['sent_ts'], rv['cnt'] = unpack_from('!II', pkt, bi)
+    bi += calcsize('!II')
+    for strip_letter in 'smhd':
+        n, code = unpack_from('!H2s', pkt, bi)
+        print(n, code)
+        bi += calcsize('!H2s')
+        dbi = calcsize(code)
+        rv[strip_letter + '_counts'] = [unpack_from(code, pkt, bi + i*dbi)[0] for i in range(n)]
+        bi += n * dbi
     return rv
 
 
@@ -96,3 +108,8 @@ class UDPListener(object):
             except zlib.error:
                 pass
         return ts, addr, data
+
+def pr():
+    l = UDPListener()
+    for p in l:
+        print(decodeReport(p[-1]))

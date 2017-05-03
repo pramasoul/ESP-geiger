@@ -121,17 +121,16 @@ class Reporter:
         def append(strip, n):
             # Append up to n values from the specified Strip, with header
             bi_for_header = bi
-            bi += calcsize('!Hs')
-            # FIXME: make this noalloc
-            #fmt = '!' + strip.code
             fmt = strip.network_order_code
+            assert len(fmt) == 2
+            bi += calcsize('!H2s')
             di = calcsize(fmt)
             qty = 0
             for v in strip.last_n(n):
                 pack_into(fmt, buf, bi, v)
                 bi += di
                 qty += 1
-            pack_into('!Hs', buf, bi_for_header, qty, strip.code)
+            pack_into('!H2s', buf, bi_for_header, qty, strip.network_order_code)
 
         buf = self.buf
         bi = self.bi
@@ -141,8 +140,9 @@ class Reporter:
         pack_into('!II', buf, bi, time.time(), acc.s.count)
         bi += calcsize('!II')
         append(acc.s, 60)
-        append(acc.m, 10)
+        append(acc.m, 60)
         append(acc.h, 24)
+        append(acc.d, 30)
 
         # Followed by the bssid's with signal strength
         if False:
