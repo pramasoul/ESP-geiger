@@ -76,11 +76,18 @@ def decodeReport(pkt):
     bi += calcsize('!II')
     for strip_letter in 'smhd':
         n, code = unpack_from('!H2s', pkt, bi)
-        print(n, code)
+        #print(n, code)
         bi += calcsize('!H2s')
         dbi = calcsize(code)
         rv[strip_letter + '_counts'] = [unpack_from(code, pkt, bi + i*dbi)[0] for i in range(n)]
         bi += n * dbi
+    #print(len(pkt) - bi, " bytes left: ", pkt[bi:])
+    n_bssids = unpack_from('!B', pkt, bi)[0]
+    l_uchar = calcsize('!B')
+    bi += l_uchar
+    rv['bssids'] = [(unpack_from('!B', pkt, bi + i * (l_uchar + 6))[0] - 200,
+                     unpack_from('!6s', pkt, bi + i * (l_uchar + 6) + 1)[0])
+                    for i in range(n_bssids)]
     return rv
 
 
