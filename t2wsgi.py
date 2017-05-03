@@ -3,6 +3,7 @@ import machine
 import network
 import ntptime
 from g1 import Geiger, GLog, Gwsgi, GReportPeriodically
+from gu import update_bssids
 from ws2 import WS
 
 class Thing:
@@ -12,6 +13,7 @@ ntptime.settime()
 g = Thing()
 g.uid = machine.unique_id()
 g.wlan = network.WLAN()
+update_bssids(g)
 
 geiger = Geiger()
 glog = GLog(geiger)

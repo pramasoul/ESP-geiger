@@ -105,8 +105,6 @@ class Reporter:
         self.g = g
         self.host = host
         self.log = log
-        self.bssids = self.scan_for_bssids()
-        print("bssids: ", self.bssids)
         self.addr = socket.getaddrinfo(host, 27183)[0][-1]
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.buf = bytearray(512)
@@ -114,10 +112,6 @@ class Reporter:
         bv[0] = 1               # version
         bv[1:5] = g.uid
         self.bi = 5
-
-    def scan_for_bssids(self):
-        return sorted(((v[3], v[1]) \
-                       for v in self.g.wlan.scan()), reverse=True)
 
     def send(self):
         def append(strip, n):
@@ -149,7 +143,7 @@ class Reporter:
         # Followed by the bssid's with signal strength
         if True:
             l_uchar = calcsize('!B')
-            bslist = self.bssids
+            bslist = self.g.bssids
             pack_into('!B', buf, bi, len(bslist))
             bi += l_uchar
             for dbm, bssid in bslist:
@@ -160,3 +154,7 @@ class Reporter:
 
         r = self.s.sendto(bv[:bi], self.addr)
         self.bi = 5
+
+def update_bssids(g):
+    g.bssids = sorted(((v[3], v[1]) \
+                       for v in g.wlan.scan()), reverse=True)
