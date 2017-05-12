@@ -1,0 +1,105 @@
+Notes for Geiger counter on ESP8266.
+
+Developing on Feather Huzzah from Adafruit.
+
+Updating
+========
+
+Need a way to update the code of deployed units. Referred to as Over
+The Air (OTA). Assume they can to HTTP to Internet. Want it to be
+secure. ESP8266 micropython resources are limited. With more resources
+might use TUF [https://theupdateframework.github.io/]
+
+ * Can we use ecdsa-0.13? a pure-Python package in pypi?
+
+Last-ditch would be to have a rolling shared secret that is different
+for each one of the devices. Server has a database from device.uid to
+shared secret. Like:
+
+ * Device makes HTTP request, providing uid and what it wants
+ * Server HTTP response is a challenge
+ * Device makes 2nd HTTP request, providing uid, challenge, response, what it wants
+ * Server HTTP response is conditioned on passing the challenge
+ * Response includes an alteration to the shared secret
+ * Device acknowledges the new shared secret with its hash
+
+Also:
+ * Want incomplete updates not to break current system.
+ * Want incomplete updates to be tolerably-efficiently resumable
+ 
+
+Strawman design:
+
+ * Everything but /main.py of a release lives and runs out of
+   its own directory, named for the release
+
+ * /main.py knows how to find which release is the one
+   to run on boot
+
+ * /release.txt has the name of the current release
+
+ * There's a metadata file, which client stores, and checks
+   with server for updates
+
+ * At a pre-determined interval (with random jitter), check
+   for updated metadata. HTTP POST with ID of requestor and
+   ID of current metadata file. 
+
+ * Valid metadata file is JSON dict including a signature
+
+ * Verify the metadata file using a function. (PK EC is nice)
+
+ * Metadata includes a number that has to move forward to
+   cause a release to replace the extant one. (Resists rewind
+   replay attack.)
+
+ * Metadata names all files that constitute updated system,
+   with their current SHA256
+
+ * All those files are checked.
+
+   * Download missing ones and SHA256 verify against
+     metadata.
+     
+   * Check extant files SHA256 and compare to the metadata.
+     If current, copy into new release directory.
+     If not current, download.
+
+   * Download is by HTTP GET of a URL that ends with the
+     urlsafe_base64 of SHA256 of the contents.
+
+   * Download is to a directory named for the release,
+     which must be correct and complete before proceeding to install
+
+ * Install is:
+
+   * Verify new release directory contents against metadata
+
+   * Copy /[RELEASE]/main.py to /main-venir
+
+   * os.rename('/main-venir', '/main.py')
+
+   * restart & hope
+
+   * /main.py rewrites /release.txt if it's not in agreement
+
+
+Candidate simplification to above:
+
+ * Metadata file is:
+   * Release number (which must increase)
+   * URL of file to download
+   * SHA256 of that file
+   * sig of this metadata file
+ * Fetch referenced URL and check SHA256
+ * Run it 
+
+ * sig can be hash(concat(file hash, shared secret))  
+
+
+Various
+=======
+
+Pfalcon's OTA for firmware is at
+https://github.com/micropython/micropython/issues/2535
+
