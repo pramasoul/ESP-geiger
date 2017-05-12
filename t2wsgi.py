@@ -1,5 +1,6 @@
 # A quickie trial integration of geiger counter parts
 import machine
+import micropython
 import network
 import ntptime
 from g1 import Geiger, GLog, Gwsgi, GReportPeriodically
@@ -9,6 +10,7 @@ from ws2 import WS
 class Thing:
     pass
 
+micropython.alloc_emergency_exception_buf(100)
 ntptime.settime()
 g = Thing()
 g.uid = machine.unique_id()
