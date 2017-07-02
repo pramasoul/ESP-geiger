@@ -14,6 +14,8 @@
 # The rest should be uint32
 
 
+import gzip
+import re
 import socket
 import time
 import zlib
@@ -116,7 +118,44 @@ class UDPListener(object):
                 pass
         return ts, addr, data
 
-def pr():
+def journal(f=None):
     l = UDPListener()
     for p in l:
-        print(decodeReport(p[-1]))
+        ts, addr, data = p
+        if f:
+            f.write(('%f %s %d %d\n' % (ts, addr[0], addr[1], len(data))).encode('UTF8'))
+            f.write(data)
+            f.write(b'\n')
+        print(decodeReport(data))
+
+
+class Journal:
+    def __init__(self, fname):
+        self.fname = fname
+        # FIXME: be smarter about determining if gzip-compressed
+        if fname.endswith('gz'):
+            self.read_f = gzip.open(fname, 'rb')
+            self.write_f = gzip.open(fname, 'ab')
+        else:
+            self.read_f = open(fname, 'rb')
+            self.write_f = open(fname, 'ab')
+
+    def __iter__(self):
+        self.read_f.seek(0)
+        return self
+
+    def __next__(self):
+        f = self.read_f
+        hs = f.readline()
+        if hs == b'\n':
+            hs = f.readline()
+        if hs[-1] != ord(b'\n'):
+            raise StopIteration
+        h = hs.split()
+        ts = float(h[0])
+        addr = h[1].decode('UTF8'), int(h[2])
+        len_data = int(h[3])
+        data = f.read(len_data)
+        if len(data) != len_data:
+            raise StopIteration
+        return ts, addr, data
