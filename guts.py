@@ -128,17 +128,34 @@ def journal(f=None):
             f.write(b'\n')
         print(decodeReport(data))
 
+def j2(filename):
+    l = UDPListener()
+    j = Journal(filename)
+    for p in l:
+        j.record(p)
+        print(decodeReport(p[-1]))
+
 
 class Journal:
     def __init__(self, fname):
         self.fname = fname
         # FIXME: be smarter about determining if gzip-compressed
         if fname.endswith('gz'):
-            self.read_f = gzip.open(fname, 'rb')
+            # FIXME: does this screw up if multiple Journal objects of same filename?
+            #  i.e. will gzip.open end up writing anything to the underlying file in
+            #  cases where there are no calls to record()?
             self.write_f = gzip.open(fname, 'ab')
+            self.read_f = gzip.open(fname, 'rb')
         else:
-            self.read_f = open(fname, 'rb')
             self.write_f = open(fname, 'ab')
+            self.read_f = open(fname, 'rb')
+
+    def record(self, p):
+        ts, addr, data = p
+        f = self.write_f
+        f.write(('%f %s %d %d\n' % (ts, addr[0], addr[1], len(data))).encode('UTF8'))
+        f.write(data)
+        f.write(b'\n')
 
     def __iter__(self):
         self.read_f.seek(0)
@@ -149,7 +166,7 @@ class Journal:
         hs = f.readline()
         if hs == b'\n':
             hs = f.readline()
-        if hs[-1] != ord(b'\n'):
+        if hs == b'' or hs[-1] != ord(b'\n'):
             raise StopIteration
         h = hs.split()
         ts = float(h[0])
