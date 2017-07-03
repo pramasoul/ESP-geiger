@@ -4,7 +4,10 @@
 from array import array
 import socket
 import time
-from ustruct import calcsize, pack_into
+try:
+    from struct import calcsize, pack_into
+except ImportError:
+    from ustruct import calcsize, pack_into
 
 # Objective:
 # Monitor the Geiger counter count every second
