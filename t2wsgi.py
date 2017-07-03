@@ -11,29 +11,34 @@ class Thing:
     pass
 
 micropython.alloc_emergency_exception_buf(100)
-ntptime.settime()
 g = Thing()
-g.uid = machine.unique_id()
-g.wlan = network.WLAN()
-update_bssids(g)
 
-geiger = Geiger()
-glog = GLog(geiger)
-grep = GReportPeriodically(g, glog)
-gw = Gwsgi(glog)
-ws = WS(gw.wsgi_app)
-print("ready to start")
-geiger.start()
-glog.start()
-grep.start()
-ws.start()
-#ws.verbose = True
-try:
-    while True:
-        ws.handle_one(10)
-except Exception as e:
-    print(e)
-    ws.stop()
+def main():
+    ntptime.settime()
+    g.uid = machine.unique_id()
+    g.wlan = network.WLAN()
+    update_bssids(g)
+
+    geiger = Geiger()
+    glog = GLog(geiger)
+    grep = GReportPeriodically(g, glog, host='put.into.com')
+    gw = Gwsgi(glog)
+    ws = WS(gw.wsgi_app)
+    print("ready to start")
+    geiger.start()
+    glog.start()
+    grep.start()
+    ws.start()
+    #ws.verbose = True
+    try:
+        while True:
+            ws.handle_one(10)
+    except Exception as e:
+        print(e)
+        ws.stop()
+
+if __name__ == '__main__':
+    main()
 
 """
 httpd = make_server('', 8000, demo_app)
