@@ -143,7 +143,7 @@ class Journal:
         if fname.endswith('gz'):
             # FIXME: does this screw up if multiple Journal objects of same filename?
             #  i.e. will gzip.open end up writing anything to the underlying file in
-            #  cases where there are no calls to record()?
+            #  cases where there are no calls to record()? Yes it will, on close.
             self.write_f = gzip.open(fname, 'ab')
             self.read_f = gzip.open(fname, 'rb')
         else:
