@@ -4,6 +4,7 @@
 # They should all pass in cPython on a computer
 
 import faker
+import gzip
 import tempfile
 import unittest
 from unittest import mock
@@ -74,18 +75,30 @@ class TestJournal(unittest.TestCase):
         j = Journal(f.name)
         self.assertIsInstance(j, Journal)
         pkts = [self.fake.packet() for i in range(100)]
+        j.open_for_appending()
         for p in pkts:
             j.record(p)
-        j.flush()
+        j.close()
         self.assertEqual(list(j), pkts)
+        return pkts
 
     def testRecordUncompressed(self):
         with tempfile.NamedTemporaryFile(suffix='.j') as f:
             self.sequentialTest(f)
 
     def testRecordCompressed(self):
-        with tempfile.NamedTemporaryFile(suffix='.jgz') as f:
-            self.sequentialTest(f)
+        with tempfile.NamedTemporaryFile(suffix='.jgz') as zf:
+            pkts = self.sequentialTest(zf)
+            # Now check that the .jgz file gzip-decompresses into a .j file
+            self.assertTrue(zf.readable())
+            with tempfile.NamedTemporaryFile(suffix='.j') as f:
+                self.assertTrue(f.writable())
+                with gzip.open(zf.name) as uzf:
+                    f.write(uzf.read())
+                    f.flush()
+                j = Journal(f.name)
+                self.assertEqual(list(j), pkts)
+
 
 if __name__ == '__main__':
     unittest.main()

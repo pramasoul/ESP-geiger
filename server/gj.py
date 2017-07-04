@@ -79,15 +79,15 @@ class Journal:
     def __init__(self, fname):
         self.fname = fname
         # FIXME: be smarter about determining if gzip-compressed
-        if fname.endswith('gz'):
-            # FIXME: does this screw up if multiple Journal objects of same filename?
-            #  i.e. will gzip.open end up writing anything to the underlying file in
-            #  cases where there are no calls to record()? Yes it will, on close.
-            self.write_f = gzip.open(fname, 'ab')
-            self.read_f = gzip.open(fname, 'rb')
+        self.gzit = fname.endswith('gz')
+        if self.gzit:
+            self.opener = gzip.open
         else:
-            self.write_f = open(fname, 'ab')
-            self.read_f = open(fname, 'rb')
+            self.opener = open
+        self.read_f = self.opener(fname, 'rb')
+
+    def open_for_appending(self):
+        self.write_f = self.opener(self.fname, 'ab')
 
     def record(self, p):
         ts, addr, data = p
@@ -98,6 +98,10 @@ class Journal:
 
     def flush(self):
         self.write_f.flush()
+
+    def close(self):
+        self.flush()
+        self.write_f.close()
 
     def __iter__(self):
         self.read_f.seek(0)
