@@ -1,4 +1,5 @@
 # Server-side receive, journal and decode
+# -*- coding: utf-8 -*-
 from struct import calcsize, unpack_from
 
 # Decode a Reporter packet
