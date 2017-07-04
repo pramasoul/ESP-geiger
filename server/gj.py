@@ -1,6 +1,8 @@
 # Server-side receive, journal and decode
 # -*- coding: utf-8 -*-
 import gzip
+import socket
+import time
 from struct import calcsize, unpack_from
 
 # Decode a Reporter packet
@@ -74,7 +76,7 @@ def j2(filename):
     try:
         for p in l:
             j.record(p)
-            print(decodeReport(p[-1]))
+            print(p[:-1], decodeReport(p[-1]))
     except KeyboardInterrupt:
         j.close()
 
