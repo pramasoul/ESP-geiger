@@ -70,10 +70,13 @@ def journal(f=None):
 def j2(filename):
     l = UDPListener()
     j = Journal(filename)
-    for p in l:
-        j.record(p)
-        print(decodeReport(p[-1]))
-
+    j.open_for_appending()
+    try:
+        for p in l:
+            j.record(p)
+            print(decodeReport(p[-1]))
+    except KeyboardInterrupt:
+        j.close()
 
 class Journal:
     def __init__(self, fname):
@@ -84,7 +87,6 @@ class Journal:
             self.opener = gzip.open
         else:
             self.opener = open
-        self.read_f = self.opener(fname, 'rb')
 
     def open_for_appending(self):
         self.write_f = self.opener(self.fname, 'ab')
@@ -104,7 +106,14 @@ class Journal:
         self.write_f.close()
 
     def __iter__(self):
-        self.read_f.seek(0)
+        try:
+            readable = self.read_f.readable()
+        except:
+            readable = False
+        if readable:
+            self.read_f.seek(0)
+        else:
+            self.read_f = self.opener(self.fname, 'rb')
         return self
 
     def __next__(self):

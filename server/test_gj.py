@@ -42,8 +42,8 @@ class TestJournal(unittest.TestCase):
     # Test fixturing: reproducably-random received packets
     cc = ''.join(chr(v) for v in range(128) if chr(v).isalnum()) + '+-_.'
     def randomFilename(self):
-        length = int(paretovariate(1))
-        return ''.join(choice(cc) for t in range(length))
+        length = int(random.paretovariate(1))
+        return ''.join(random.choice(self.cc) for t in range(length))
 
 
     def setUp(self):
@@ -70,6 +70,10 @@ class TestJournal(unittest.TestCase):
         with tempfile.NamedTemporaryFile(suffix='.j') as f:
             j = Journal(f.name)
             self.assertIsInstance(j, Journal)
+
+    def testInitNewFilename(self):
+        fname = self.randomFilename()
+        j = Journal(fname)
 
     def sequentialTest(self, f):
         j = Journal(f.name)
