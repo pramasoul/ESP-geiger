@@ -70,17 +70,22 @@ class TestJournal(unittest.TestCase):
             j = Journal(f.name)
             self.assertIsInstance(j, Journal)
 
+    def sequentialTest(self, f):
+        j = Journal(f.name)
+        self.assertIsInstance(j, Journal)
+        pkts = [self.fake.packet() for i in range(100)]
+        for p in pkts:
+            j.record(p)
+        j.flush()
+        self.assertEqual(list(j), pkts)
+
     def testRecordUncompressed(self):
         with tempfile.NamedTemporaryFile(suffix='.j') as f:
-            j = Journal(f.name)
-            self.assertIsInstance(j, Journal)
-            pkts = [self.fake.packet() for i in range(1)]
-            for p in pkts:
-                j.record(p)
-            j.flush()
-            jpkts = list(j)
-            self.assertEqual(jpkts, pkts)
+            self.sequentialTest(f)
 
+    def testRecordCompressed(self):
+        with tempfile.NamedTemporaryFile(suffix='.jgz') as f:
+            self.sequentialTest(f)
 
 if __name__ == '__main__':
     unittest.main()
