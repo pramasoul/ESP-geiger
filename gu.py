@@ -4,7 +4,10 @@
 from array import array
 import socket
 import time
-from ustruct import calcsize, pack_into
+try:
+    from struct import calcsize, pack_into
+except ImportError:
+    from ustruct import calcsize, pack_into
 
 # Objective:
 # Monitor the Geiger counter count every second
@@ -107,7 +110,7 @@ class Reporter:
         self.log = log
         self.addr = socket.getaddrinfo(host, 27183)[0][-1]
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.buf = bytearray(512)
+        self.buf = bytearray(1024)
         bv = self.bv = memoryview(self.buf)
         bv[0] = 1               # version
         bv[1:5] = g.uid
@@ -135,10 +138,11 @@ class Reporter:
 
         pack_into('!II', buf, bi, time.time(), acc.s.count)
         bi += calcsize('!II')
-        append(acc.s, 60)
-        append(acc.m, 60)
-        append(acc.h, 24)
-        append(acc.d, 30)
+        append(acc.s, 60)       # 120 bytes
+        append(acc.m, 60)       # 240 bytes
+        append(acc.h, 24)       #  96 bytes
+        append(acc.d, 30)       # 120 bytes
+                                # 576 bytes total
 
         # Followed by the bssid's with signal strength
         if True:
@@ -149,6 +153,9 @@ class Reporter:
             for dbm, bssid in bslist:
                 pack_into('!B', buf, bi, 200+dbm)
                 bi += l_uchar
+                # Don't attempt to send more bssid's than fit
+                if bi+6 > len(buf):
+                    break
                 bv[bi:bi+6] = bssid
                 bi += 6
 
