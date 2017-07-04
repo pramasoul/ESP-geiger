@@ -95,6 +95,9 @@ class Journal:
         f.write(data)
         f.write(b'\n')
 
+    def flush(self):
+        self.write_f.flush()
+
     def __iter__(self):
         self.read_f.seek(0)
         return self
