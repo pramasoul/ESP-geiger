@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import cherrypy
 
 class HelloWorld(object):
