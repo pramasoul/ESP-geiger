@@ -1,5 +1,7 @@
 # random utilities - TAS
 import os
+import socket
+from shutil import copyfileobj
 
 
 def cat(path):
@@ -12,11 +14,31 @@ def df(path='/'):
     _ = os.statvfs('/')
     return _[1] * _[4]
 
-
 def ifconfig():
     import network
     w = network.WLAN()
     return w.ifconfig()
+
+def http_open(url):
+    _, _, host, path = url.split('/', 3)
+    if ':' in host:
+        host, _ = host.split(':')
+        port = int(_)
+    else:
+        port = 80
+    addr = socket.getaddrinfo(host, port)[0][-1]
+    s = socket.socket()
+    s.connect(addr)
+    s.send(bytes('GET /%s HTTP/1.0\r\nHost: %s\r\n\r\n' % (path, host), 'utf8'))
+    return s
+
+def curlO(url):
+    _, fname = url.rsplit('/',1)
+    with open(fname, 'wb') as f:
+        s = http_open(url)
+        while s.readline() != b'\r\n':
+            pass
+        copyfileobj(s, f)
 
 def pinServe():
     import machine
