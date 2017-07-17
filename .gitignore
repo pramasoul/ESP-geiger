@@ -4,3 +4,5 @@
 *.j
 *.jgz
 *.log
+*.secret
+*.secret.json
