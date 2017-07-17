@@ -1,5 +1,6 @@
 import cherrypy
 import hashlib
+import json
 from binascii import hexlify
 
 class HelloWorld(object):
@@ -24,18 +25,14 @@ def hashit(*args):
 class Beetle:
     def __init__(self, ident=None, ss_hint=None, revision=None):
         self.id = ident
-        sgs = cherrypy.request.app.config['secrets']['secret_generating_secret']
+        with open(cherrypy.request.app.config['secrets']['secret_generating_secret_filename']) as f:
+            sgs = json.load(f)['secret']
         self.shared_secret = hashit(sgs, ident, ss_hint)
         self.rev = revision
 
     def sign(self, value):
         return hexlify(hashit(self.shared_secret, value))
         
-    def hint_secret(self):
-        # Generate a random (hint, shared_secret) pair
-        hint = os.urandom(32)
-        return hint, hashit(cherrypy.request.app.config['secrets']['secret_generating_secret'], hint)
-
     def update_files(self):
         # FIXME: make real
         # This would come out of a configuration management database
@@ -52,8 +49,8 @@ class Update:
             b'http://192.168.32.69:8080/src/' +  path \
                 + b' ' + beetle.sign(contents_hash) \
                 for path, contents_hash in beetle.update_files())
+        rv += b'\n%s\n' % beetle.sign(rv)
         return rv
-
 
     @cherrypy.expose
     def at(self, beetle_id, revision):
