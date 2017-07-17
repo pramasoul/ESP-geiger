@@ -63,7 +63,7 @@ cherrypy.config.update({'server.socket_host': '0.0.0.0',
 #cherrypy.quickstart(HelloWorld())
 
 cherrypy.tree.mount(HelloWorld(), '/')
-cherrypy.tree.mount(Update(), '/up', 'ts1.conf')
+cherrypy.tree.mount(Update(), '/up', 'update_server.conf')
 cherrypy.engine.start()
 cherrypy.engine.block()
 
