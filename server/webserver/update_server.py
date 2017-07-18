@@ -43,11 +43,12 @@ class Beetle:
 @cherrypy.popargs('beetle_id', 'ss_hint', 'revision')
 class Update:
     @cherrypy.expose
-    def index(self, beetle_id, ss_hint, revision):
+    def new(self, beetle_id, ss_hint, revision):
         beetle = Beetle(beetle_id, ss_hint, revision)
         rv = b'\n'.join(\
-            b'http://192.168.32.69:8080/src/' +  path \
-                + b' ' + beetle.sign(contents_hash) \
+            bytes(cherrypy.request.app.config['/up']['url-prefix'].encode('UTF8')) \
+                +  path \
+                + b' ' + contents_hash.encode('ASCII') \
                 for path, contents_hash in beetle.update_files())
         rv += b'\n%s\n' % beetle.sign(rv)
         return rv
