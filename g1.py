@@ -12,30 +12,46 @@ from gu import Accumulator, Reporter
 
 class Geiger:
     def __init__(self):
-        self.led = Pin(0, mode=Pin.OUT)
-        self.led(1)
-        self.sense = Pin(4, mode=Pin.IN)
-        self.cb = None
+        self.led = Pin(0, Pin.OUT, value=1)
+        # FIXME: does pull-up work with Sparkfun Geiger tube?
+        self.sense = Pin(14, Pin.IN, Pin.PULL_UP)
+        # "noise" pin tells us to expect false pulses on sense,
+        # so should ignore them for some time (a few ms)
+        self.noise = Pin(12, Pin.IN, Pin.PULL_UP)
+        self.scb = self.ncb = None
+        self.ntim = Timer(-1)
         self.counter = 0
 
     def start(self):
-        if self.cb:
-            self.cb.trigger(self.sense.IRQ_RISING)
+        if self.scb:
+            # Sparkfun geiger tube is ?rising-edge pulse
+            # Radiation-watch PIN array sensor pulls low on signal but
+            # rising-edge works and gives epsilon more time to respond to noise
+            self.scb.trigger(self.sense.IRQ_RISING)
             return
 
-        def cbf(pin):
-            #was = disable_irq() # unnecessary as we are only modifier
+        def scbf(pin):
+            #was = disable_irq() # unnecessary as we are the only modifier
             self.counter += 1
             #enable_irq(was)
             self.bip()
 
-        self.cb = self.sense.irq(handler=cbf,
+        self.scb = self.sense.irq(handler=scbf,
                                  trigger=self.sense.IRQ_RISING)
 
+        # Noise pin shall produce 5ms dead time
+        def ncbf(pin):
+            self.ntim.init(period=5, mode=Timer.ONE_SHOT,
+                           callback=lambda t: self.scb.trigger(self.sense.IRQ_RISING))
+            self.scb.trigger(0)
+
+        self.ncb = self.noise.irq(handler=ncbf,
+                                 trigger=self.noise.IRQ_RISING)
+
     def stop(self):
-        #self.cb = self.sense.irq(handler=None,
+        #self.scb = self.sense.irq(handler=None,
         #                         trigger=None)
-        self.cb.trigger(0)
+        self.scb.trigger(0)
         
     def mirror(self):
         while True:
@@ -75,6 +91,8 @@ class GLog:
         self.tim.deinit()
 
     def log(self, t):
+        # FIXME: Is there a problem when counter exceeds 2^31?
+        # ... Should we zero out counter here?
         c = self.geiger.counter
         delta = c - self.prior_count
         self.prior_count = c
