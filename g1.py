@@ -40,6 +40,7 @@ class Geiger:
                                  trigger=self.sense.IRQ_RISING)
 
         # Noise pin shall produce 5ms dead time
+        # FIXME: count noise events and report them
         def ncbf(pin):
             self.ntim.init(period=5, mode=Timer.ONE_SHOT,
                            callback=lambda t: self.scb.trigger(self.sense.IRQ_RISING))
